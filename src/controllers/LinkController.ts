@@ -12,50 +12,33 @@ import { getUserById } from '../models/UserModel';
 import { parseDatabaseError } from '../utils/db-utils';
 
 async function shortenUrl(req: Request, res: Response): Promise<void> {
-  // Make sure the user is logged in
-  // send the appropriate response
-  const { loggedIn } = req.session;
-
-  if (!loggedIn) {
+  if (!req.session.loggedIn) {
     res.redirect('/login');
     return;
   }
 
   // Get the userId from `req.session`
-  const { userId } = req.session.authenticatedUser;
+  const { authenticatedUser } = req.session;
 
-  // Retrieve the user's account data using their ID
-  const user = await getUserById(userId);
-
-  // Check if you got back `null`
-  // send the appropriate response
+  const user = await getUserById(authenticatedUser.userId);
   if (!user) {
     res.sendStatus(404);
     return;
   }
 
-  const numOfLinks = user.links.length;
-
-  // Check if the user is neither a "pro" nor an "admin" account
-  if (!user.isAdmin && !user.isPro) {
-    // check how many links they've already generated
-    // if they have generated 5 links, send the appropriate response
-    if (numOfLinks >= 5) {
-      res.sendStatus(403);
-      return;
-    }
+  if ((!user.isPro || !user.isAdmin) && user.links.length >= 5) {
+    res.sendStatus(403);
+    return;
   }
 
-  // Generate a `linkId`
-  const { originalUrl } = req.body;
-  const linkId = createLinkId(originalUrl, userId);
+  const { originalUrl } = req.body as NewLinkRequest;
 
-  // Add the new link to the database (wrap this in try/catch)
+  const linkId = createLinkId(originalUrl, user.userId);
+
   try {
     const newLink = await createNewLink(originalUrl, linkId, user);
-    console.log(newLink);
-    // Respond with status 201 if the insert was successful
-    res.sendStatus(201);
+    newLink.user.passwordHash = undefined;
+    res.status(201).json(newLink);
   } catch (err) {
     console.error(err);
     const databaseErrorMessage = parseDatabaseError(err);

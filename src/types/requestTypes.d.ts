@@ -1,0 +1,3 @@
+type NewLinkRequest = {
+  originalUrl: string;
+};
