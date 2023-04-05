@@ -7,8 +7,9 @@ import { registerUser, logIn } from './controllers/UserController';
 import { shortenUrl, deleteLink, getOriginalUrl, getLinkData } from './controllers/LinkController';
 
 const app: Express = express();
-const { PORT, COOKIE_SECRET } = process.env;
+app.use(express.static('public', { extensions: ['html'] }));
 
+const { PORT, COOKIE_SECRET } = process.env;
 const SQLiteStore = connectSqlite3(session);
 
 app.use(
@@ -22,13 +23,14 @@ app.use(
   })
 );
 
+app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
+app.get('/api/users/:targetedUserId/links', getLinkData);
+app.post('/api/links', shortenUrl);
+app.delete('/api/users/:targetedUserId/links/:targetLinkId', deleteLink);
+app.get('/:targetLinkId', getOriginalUrl);
 app.post('/api/users', registerUser);
 app.post('/api/login', logIn);
-app.get('/api/users/:targetUserId/links', getLinkData);
-app.post('/api/links', shortenUrl);
-app.delete('/api/users/:targetUserId/links/:targetLinkId', deleteLink);
-app.get('/:targetLinkId', getOriginalUrl);
 
 app.listen(PORT, () => console.log(`Listening on port http://127.0.0.1:${PORT}`));

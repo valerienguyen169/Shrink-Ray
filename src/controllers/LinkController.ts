@@ -17,7 +17,7 @@ async function shortenUrl(req: Request, res: Response): Promise<void> {
   const { loggedIn } = req.session;
 
   if (!loggedIn) {
-    res.sendStatus(401);
+    res.redirect('/login');
     return;
   }
 
@@ -110,7 +110,7 @@ async function deleteLink(req: Request, res: Response): Promise<void> {
   const { userId, isAdmin } = req.session.authenticatedUser;
 
   if (!loggedIn) {
-    res.sendStatus(401);
+    res.redirect('/login');
     return;
   }
 
